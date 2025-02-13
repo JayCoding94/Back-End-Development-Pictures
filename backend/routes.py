@@ -35,7 +35,7 @@ def count():
 ######################################################################
 @app.route("/picture", methods=["GET"])
 def get_pictures():
-    pass
+    return jsonify(data), 200
 
 ######################################################################
 # GET A PICTURE
@@ -44,7 +44,10 @@ def get_pictures():
 
 @app.route("/picture/<int:id>", methods=["GET"])
 def get_picture_by_id(id):
-    pass
+    picture = next((pic for pic in data if pic.get("id") == id), None)
+    if picture:
+        return jsonify(picture), 200
+    abort(404, description="Picture not found")
 
 
 ######################################################################
@@ -52,7 +55,15 @@ def get_picture_by_id(id):
 ######################################################################
 @app.route("/picture", methods=["POST"])
 def create_picture():
-    pass
+    """Create a new picture entry"""
+    picture = request.get_json()
+    picture_id = picture.get("id")
+
+    if any(pic["id"] == picture_id for pic in data):
+        return jsonify({"Message": f"picture with id {picture_id} already present"}), 302
+
+    data.append(picture)
+    return jsonify(picture), 201
 
 ######################################################################
 # UPDATE A PICTURE
@@ -61,11 +72,35 @@ def create_picture():
 
 @app.route("/picture/<int:id>", methods=["PUT"])
 def update_picture(id):
-    pass
+    """Update a picture entry by ID"""
+    update_data = request.get_json()
+
+    # Find the picture with the given ID
+    picture = next((pic for pic in data if pic["id"] == id), None)
+    
+    if not picture:
+        return jsonify({"message": "picture not found"}), 404
+
+    # Update the picture with new data
+    picture.update(update_data)
+
+    return jsonify(picture), 200
 
 ######################################################################
 # DELETE A PICTURE
 ######################################################################
 @app.route("/picture/<int:id>", methods=["DELETE"])
 def delete_picture(id):
-    pass
+    """Delete a picture entry by ID"""
+    global data  # 데이터를 수정해야 하므로 global로 선언
+
+    # Find the picture index by ID
+    picture_index = next((index for index, pic in enumerate(data) if pic["id"] == id), None)
+    
+    if picture_index is None:
+        return jsonify({"message": "picture not found"}), 404
+
+    # Remove the picture from the list
+    del data[picture_index]
+
+    return "", 204  # 204 No Content (Empty body)
